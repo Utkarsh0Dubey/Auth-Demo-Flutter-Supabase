@@ -1,25 +1,7 @@
 import 'package:flutter/material.dart';
-// Import supabase_flutter for both Supabase class and Provider
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'home_screen.dart';
 import 'sign_up.dart';
-
-// Simple HomeScreen to navigate to after successful login
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Welcome')),
-      body: const Center(
-        child: Text(
-          'Light Up Your Home!',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-}
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -62,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
 
-      // In supabase_flutter >=1.9.1, AuthResponse provides .user, .session, etc.
+      // For supabase_flutter >=2.x, AuthResponse provides user, session, etc.
       if (response.session != null) {
         // Show success
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,6 +66,32 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
   }
+
+  // Google OAuth login
+  Future<void> _loginWithGoogle() async {
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'authdemo://login-callback',
+      );
+
+      // Listen for auth state changes and redirect to HomeScreen
+      supabase.auth.onAuthStateChange.listen((data) {
+        final session = data.session;
+        if (session != null) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Login Failed: $e')),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +174,11 @@ class _LoginPageState extends State<LoginPage> {
 
                   // LOGIN button
                   _buildLoginButton(),
+
+                  const SizedBox(height: 20),
+
+                  // GOOGLE button
+                  _buildGoogleLoginButton(),
 
                   const SizedBox(height: 35),
 
@@ -284,6 +297,44 @@ class _LoginPageState extends State<LoginPage> {
             fontWeight: FontWeight.bold,
             color: Colors.indigo,
           ),
+        ),
+      ),
+    );
+  }
+
+  // Google Login Button
+  Widget _buildGoogleLoginButton() {
+    return InkWell(
+      splashColor: Colors.black,
+      onTap: _loginWithGoogle,
+      child: Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.symmetric(
+          vertical: 10,
+          horizontal: 50,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.network(
+              'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png',
+              width: 24,
+              height: 24,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Sign in with Google',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.indigo,
+              ),
+            ),
+          ],
         ),
       ),
     );
