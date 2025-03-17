@@ -1,7 +1,9 @@
 import 'package:auth_demo/branding_screen.dart';
 import 'package:auth_demo/home_screen.dart';
+import 'package:auth_demo/quiz_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'avatar_selection_screen.dart';
 import 'login_page.dart';
 import 'secrets.dart';
 
@@ -46,8 +48,11 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      // Navigate to HomeScreen if logged in; otherwise show BrandingScreen.
-      home: _isLoggedIn ? const HomeScreen() : const BrandingScreen(),
+      // If user is logged in, show AvatarSelectionScreen. Otherwise, show BrandingScreen.
+      home: _isLoggedIn
+          ? const AvatarSelectionScreen()  // <--- your new flow
+          : const BrandingScreen(),
     );
   }
+
 }

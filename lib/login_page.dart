@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'home_screen.dart';
 import 'sign_up.dart';
+// 1) Import the new AvatarSelectionScreen
+import 'avatar_selection_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -44,15 +45,14 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
 
-      // For supabase_flutter >=2.x, AuthResponse provides user, session, etc.
       if (response.session != null) {
         // Show success
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login Successful!')),
         );
-        // Navigate to the home screen
+        // Navigate to AvatarSelectionScreen instead of QuizScreen
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const AvatarSelectionScreen()),
         );
       } else {
         // If session is null, login likely failed
@@ -76,12 +76,12 @@ class _LoginPageState extends State<LoginPage> {
         redirectTo: 'authdemo://login-callback',
       );
 
-      // Listen for auth state changes and redirect to HomeScreen
+      // Listen for auth state changes and redirect to AvatarSelectionScreen
       supabase.auth.onAuthStateChange.listen((data) {
         final session = data.session;
         if (session != null) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const AvatarSelectionScreen()),
           );
         }
       });
@@ -92,13 +92,36 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // Facebook OAuth login
+  Future<void> _loginWithFB() async {
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.facebook,
+        redirectTo: 'authdemo://login-callback',
+      );
+
+      // Listen for auth state changes and redirect to AvatarSelectionScreen
+      supabase.auth.onAuthStateChange.listen((data) {
+        final session = data.session;
+        if (session != null) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const AvatarSelectionScreen()),
+          );
+        }
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Facebook Login Failed: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Don't resize the widget when keyboard appears
+      // Don't resize when keyboard appears
       resizeToAvoidBottomInset: false,
-
       body: Stack(
         children: [
           // Background image
@@ -133,7 +156,6 @@ class _LoginPageState extends State<LoginPage> {
                       fontSize: 35,
                     ),
                   ),
-
                   const SizedBox(height: 30),
 
                   // Email Field
@@ -152,8 +174,8 @@ class _LoginPageState extends State<LoginPage> {
                     hint: 'Enter your Password',
                     controller: _passwordController,
                   ),
-
                   const SizedBox(height: 5),
+
                   Align(
                     alignment: Alignment.centerRight,
                     child: InkWell(
@@ -174,12 +196,14 @@ class _LoginPageState extends State<LoginPage> {
 
                   // LOGIN button
                   _buildLoginButton(),
-
                   const SizedBox(height: 20),
 
                   // GOOGLE button
                   _buildGoogleLoginButton(),
+                  const SizedBox(height: 20),
 
+                  // FACEBOOK button
+                  _buildTwitterLoginButton(),
                   const SizedBox(height: 35),
 
                   // Sign Up prompt
@@ -191,9 +215,9 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
+
                   // Elevated Sign Up Button
                   _buildSignUpButton(),
-
                   const SizedBox(height: 20),
                 ],
               ),
@@ -205,7 +229,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ------------------------------------------------------
-  // Below are the helper widgets needed by the build()
+  // Helper widgets
   // ------------------------------------------------------
 
   Widget _buildTextField({
@@ -216,22 +240,13 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return TextField(
       controller: controller,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.5),
-        ),
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Colors.white,
-            width: 5,
-          ),
+          borderSide: const BorderSide(color: Colors.white, width: 5),
         ),
         prefixIcon: Icon(icon, color: Colors.white),
       ),
@@ -247,22 +262,13 @@ class _LoginPageState extends State<LoginPage> {
     return TextField(
       controller: controller,
       obscureText: _obscureText,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.5),
-        ),
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Colors.white,
-            width: 5,
-          ),
+          borderSide: const BorderSide(color: Colors.white, width: 5),
         ),
         prefixIcon: Icon(icon, color: Colors.white),
         suffixIcon: IconButton(
@@ -282,10 +288,7 @@ class _LoginPageState extends State<LoginPage> {
       splashColor: Colors.black,
       onTap: _login,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: 10,
-          horizontal: 100,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 100),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10.0),
@@ -309,25 +312,47 @@ class _LoginPageState extends State<LoginPage> {
       onTap: _loginWithGoogle,
       child: Container(
         margin: const EdgeInsets.only(top: 8),
-        padding: const EdgeInsets.symmetric(
-          vertical: 10,
-          horizontal: 50,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 50),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10.0),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.network(
-              'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png',
-              width: 24,
-              height: 24,
-            ),
-            const SizedBox(width: 10),
-            const Text(
+          children: const [
+            SizedBox(width: 10),
+            Text(
               'Sign in with Google',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.indigo,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Facebook Login Button
+  Widget _buildTwitterLoginButton() {
+    return InkWell(
+      splashColor: Colors.black,
+      onTap: _loginWithFB,
+      child: Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 50),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            SizedBox(width: 10),
+            Text(
+              'Sign in with Facebook',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -343,15 +368,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildSignUpButton() {
     return ElevatedButton(
       onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const SignUpScreen()),
-        );
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SignUpScreen()));
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       child: const Padding(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 30),
